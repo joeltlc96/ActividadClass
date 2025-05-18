@@ -1,97 +1,88 @@
-const apiUrl = 'http://localhost:3000/todos'; // Cambia esta URL según tu backend
-const todoForm = document.getElementById('todoForm');
-const todoTableBody = document.getElementById('todoTableBody');
+const URL_API = "http://localhost:3000/todos";
+const txtNombre = document.getElementById("txtNombre");
+const txtDescripcion = document.getElementById("txtDescripcion");
+const tablaTareas = document.getElementById("tablaTareas");
 
-let editingId = null;
+LlenarTabla();
 
-// Obtener todos
-async function fetchTodos() {
-  const response = await fetch(apiUrl);
-  const todos = await response.json();
-  renderTodos(todos);
+async function LlenarTabla() {
+  const tareas = await ObtenerTareas();
+  DibujarTabla(tareas);
 }
 
-// Crear o actualizar tarea
-todoForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const nombre = document.getElementById('nombre').value;
-  const descripcion = document.getElementById('descripcion').value;
+async function ObtenerTareas() {
+  const response = await fetch(URL_API);
 
-  const todoData = {
-    nombre,
-    descripcion,
-    estaCompleto: false,
-    fechaCreacion: new Date().toISOString()
-  };
-
-  if (editingId) {
-    await fetch(`${apiUrl}/${editingId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(todoData)
-    });
-    editingId = null;
-  } else {
-    await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(todoData)
-    });
+  if (!response.ok) {
+    alert("Error al obtener datos del servidor");
+    return null;
   }
 
-  todoForm.reset();
-  fetchTodos();
-});
+  const tareas = await response.json();
+  return tareas;
+}
 
-// Renderizar tabla
-function renderTodos(todos) {
-  todoTableBody.innerHTML = '';
-  todos.forEach(todo => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${todo.id}</td>
-      <td>${todo.nombre}</td>
-      <td>${todo.descripcion}</td>
-      <td>
-        <input type="checkbox" ${todo.estaCompleto ? 'checked' : ''} onchange="toggleCompleto(${todo.id}, this.checked)">
-      </td>
-      <td>${new Date(todo.fechaCreacion).toLocaleString()}</td>
-      <td>
-        <button class="btn btn-sm btn-warning me-2" onclick="editTodo(${todo.id})">Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteTodo(${todo.id})">Eliminar</button>
-      </td>
-    `;
-    todoTableBody.appendChild(row);
+async function Guardar() {
+  const nuevaTarea = {
+    name: txtNombre.value,
+    description: txtDescripcion.value.trim(),
+  };
+
+  const response = await fetch(URL_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(nuevaTarea),
+  });
+
+  if (!response.ok) {
+    alert("Error llamando al servicio");
+    return;
+  }
+
+  const tareaGuardada = await response.json();
+  alert("Tarea guardada con éxito. Nuevo id: " + tareaGuardada.id);
+}
+
+function DibujarTabla(tareas) {
+  tareas.forEach((tarea) => {
+    const nuevaFila = tablaTareas.insertRow();
+    LlenarFila(nuevaFila, tarea);
   });
 }
 
-// Editar tarea
-async function editTodo(id) {
-  const res = await fetch(`${apiUrl}/${id}`);
-  const todo = await res.json();
-  document.getElementById('nombre').value = todo.nombre;
-  document.getElementById('descripcion').value = todo.descripcion;
-  editingId = id;
+function LlenarFila(fila, tarea) {
+  const celdaNombre = fila.insertCell();
+  celdaNombre.textContent = tarea.name;
+
+  const celdaDescripcion = fila.insertCell();
+  celdaDescripcion.textContent = tarea.description;
+
+  const celdaCompleto = fila.insertCell();
+  celdaCompleto.textContent = tarea.complete === "1" ? "YES" : "NO";
+
+  const celdaFecha = fila.insertCell();
+  const fecha = new Date(tarea.created_at);
+  celdaFecha.textContent = fecha.toLocaleDateString();
+
+  const celdaAcciones = fila.insertCell();
+  const btnEditar = "<button class='btnEditar btn btn-warning'>Editar</button>";
+  const btnEliminar = 
+  `<button class="btnEliminar btn btn-danger" 
+  onclick="EliminarTarea('${tarea.name}', ${tarea.id});">
+  Eliminar</button>`;  
+  celdaAcciones.innerHTML += btnEditar;
+  celdaAcciones.innerHTML += btnEliminar;
 }
 
-// Eliminar tarea
-async function deleteTodo(id) {
-  await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
-  fetchTodos();
-}
+function EliminarTarea(tareaName, id) {
+  const mensaje = "Confirma la eliminación de: " + tareaName;
+  const respuestaUsuario = confirm(mensaje);
 
-// Marcar como completado
-async function toggleCompleto(id, checked) {
-  const res = await fetch(`${apiUrl}/${id}`);
-  const todo = await res.json();
-  todo.estaCompleto = checked;
-  await fetch(`${apiUrl}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(todo)
-  });
-  fetchTodos();
-}
+  if (!respuestaUsuario)
+    return;
 
-// Inicializar
-fetchTodos();
+  // Lógica para llamar al API y eliminar
+  alert("Se eliminó la tarea: " + tareaName);
+}

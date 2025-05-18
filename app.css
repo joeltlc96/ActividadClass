@@ -1,7 +1,33 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Arial, sans-serif;
+  margin: 20px;
 }
 
-.table td, .table th {
-  vertical-align: middle;
+fieldset {
+  border: 2px solid lightseagreen;
+  padding: 20px;
+}
+
+legend {
+  font-weight: bold;
+  color: seagreen;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 5px;
+  margin-top: 5px;
+}
+
+.tabla-tareas {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid lightseagreen;
+}
+
+.tabla-tareas th,
+.tabla-tareas td {
+  border: 1px solid lightseagreen;
+  padding: 8px;
+  text-align: left;
 }
